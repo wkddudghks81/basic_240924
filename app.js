@@ -107,7 +107,7 @@ app.delete("/withdraw", (req, res) => {
     }
     if(password === userInfos[Checkid].password){
       userInfos.splice(Checkid,1)     //index 부터 index 포함 1개 데이터 삭제
-      res.send(userInfos);
+      return res.status(200).json("삭제 성공")
     }else{
       return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
     }
