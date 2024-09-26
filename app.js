@@ -1,13 +1,13 @@
 //pull requests 실습을 위한 주석
 import express from "express";
 
+const userInfos = [];       //데이터 베이스
+
 const app = express();
 
 app.use(express.json());    //body json형태 요청을 받기 위해
 
 const port = "924";
-
-const userInfos = [];       //데이터 베이스
 
 // let check = userInfos.findIndex(function (data) {
 //   return data.id === id;
