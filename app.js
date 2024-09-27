@@ -1,5 +1,31 @@
 //pull requests 실습을 위한 주석
 import express from "express";
+import Joi from 'joi';
+
+const password_pattern = /^[a-z|A-Z|0-9]+$/; // userId는 알파벳 대소문자 (a~z, A~Z), 숫자(0~9)로 구성
+
+const signupschema = Joi.object({
+  //이메일 형식이고 필수로 존재
+  id:Joi.string().email().required(),
+  name:Joi.string().min(3).max(10).required(),
+  password:Joi.string().min(6).max(10).pattern(new RegExp(password_pattern)).required(),
+  age:Joi.number(),
+  userID:Joi.number()
+})
+
+const signinschema = Joi.object({
+  //이메일 형식이고 필수로 존재
+  id:Joi.string().email().required(),
+  password:Joi.string().min(6).max(10).pattern(new RegExp(password_pattern)).required(),
+})
+
+const changeNameschema = Joi.object({
+  //이메일 형식이고 필수로 존재
+  id:Joi.string().email().required(),
+  name:Joi.string().min(3).max(10).required(),
+  password:Joi.string().min(6).max(10).pattern(new RegExp(password_pattern)).required(),
+})
+
 
 const userInfos = [];       //데이터 베이스
 
@@ -35,6 +61,7 @@ app.post("/sign-up", async (req, res) => {
     age,
     userID:userID
   };
+  await signupschema.validateAsync(plus); 
   let Checkid = checkid(id) //index 변수에 할당
   if(0<=Checkid){           //index가 하나라도 존재한다면 동일한 id가 존재한다는 뜻
     res.status(409).json("동일한 아이디가 존재합니다.")
@@ -43,15 +70,21 @@ app.post("/sign-up", async (req, res) => {
   res.send(userInfos[userInfos.length - 1]);
   }
 }catch (error) {
+  if(error.name === 'ValidationError'){
+    return res.status(409).json(error.message),
+    console.log(error)
+  }
   res.status(500).send('서버 내부 오류가 발생했습니다.');
   console.log(error)
+  console.log(error.name)
 }
 });
 
 //로그인
-app.post("/sign-in", (req, res) => {
+app.post("/sign-in", async (req, res) => {
   try{
   let { id, password } = req.body;
+  await signinschema.validateAsync(req.body)
   let Checkid = checkid(id)
   if(Checkid === -1){         //id와 동일한 데이터를 찾아서 index 반환, 없으면 -1 반환
     return res.status(404).json("아이디가 존재 하지 않습니다")
@@ -62,6 +95,10 @@ app.post("/sign-in", (req, res) => {
     return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
   }
 }catch(error){
+  if(error.name === 'ValidationError'){
+    return res.status(409).json(error.message),
+    console.log(error)
+  }
   res.status(500).json('서버 내부 오류가 발생했습니다.');
   console.log(error)
 }
@@ -78,9 +115,10 @@ app.get("/secret/uesrinfos", (req, res) => {
 });
 
 //이름 변경
-app.patch("/changeName", (req, res) => {
+app.patch("/changeName", async (req, res) => {
   try{
     let { id, name, password} = req.body;
+    await changeNameschema.validateAsync(req.body)
     let Checkid = checkid(id)
     if(Checkid === -1){
       return res.status(404).json("아이디가 존재 하지 않습니다")
@@ -92,15 +130,20 @@ app.patch("/changeName", (req, res) => {
       return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
     }
 }catch(error){
+  if(error.name === 'ValidationError'){
+    return res.status(409).json(error.message),
+    console.log(error)
+  }
   res.status(500).send('서버 내부 오류가 발생했습니다.');
   console.log(error)
 }
 });
 
 //유저 삭제
-app.delete("/withdraw", (req, res) => {
+app.delete("/withdraw", async (req, res) => {
   try{
     let { id, password} = req.body;
+    await signinschema.validateAsync(req.body)
     let Checkid = checkid(id)
     if(Checkid === -1){
       return res.status(404).json("아이디가 존재 하지 않습니다")
@@ -112,6 +155,10 @@ app.delete("/withdraw", (req, res) => {
       return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
     }
 }catch(error){
+  if(error.name === 'ValidationError'){
+    return res.status(409).json(error.message),
+    console.log(error)
+  }
   res.status(500).send('서버 내부 오류가 발생했습니다.');
   console.log(error)
 }
