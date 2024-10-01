@@ -1,6 +1,17 @@
 //pull requests 실습을 위한 주석
+//1 아이디 ,비밀번호 로직 함수로 만들기
+//2 api들 라우터로 만들기
+//3 joi 미들웨어로 빼기
 import express from "express";
 import Joi from 'joi';
+
+const userInfos = [];       //데이터 베이스
+
+const app = express();
+
+app.use(express.json());    //body json형태 요청을 받기 위해
+
+const port = "924";
 
 const password_pattern = /^[a-z|A-Z|0-9]+$/; // userId는 알파벳 대소문자 (a~z, A~Z), 숫자(0~9)로 구성
 
@@ -26,15 +37,6 @@ const changeNameschema = Joi.object({
   password:Joi.string().min(6).max(10).pattern(new RegExp(password_pattern)).required(),
 })
 
-
-const userInfos = [];       //데이터 베이스
-
-const app = express();
-
-app.use(express.json());    //body json형태 요청을 받기 위해
-
-const port = "924";
-
 // let check = userInfos.findIndex(function (data) {
 //   return data.id === id;
 // });
@@ -44,6 +46,19 @@ function checkid(id){       //id와 동일한 데이터를 찾아서 index 반�
     return data.id === id;  //data=useInfos
   })
 }
+
+function accountcheck(id, password, res) {
+  let Checkid = checkid(id);
+  if (Checkid === -1) { // id와 동일한 데이터를 찾아서 index 반환, 없으면 -1 반환
+    res.status(404).json("아이디가 존재하지 않습니다"),"no exist"
+  }
+  if (password === userInfos[Checkid].password) {
+    return "success"
+  } else {
+    res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오"),"fail"
+  }
+}
+
 //회원가입
 app.post("/sign-up", async (req, res) => {
   try{
@@ -83,16 +98,19 @@ app.post("/sign-up", async (req, res) => {
 //로그인
 app.post("/sign-in", async (req, res) => {
   try{
-  let { id, password } = req.body;
+  let { id, password } = req.body;  
   await signinschema.validateAsync(req.body)
-  let Checkid = checkid(id)
-  if(Checkid === -1){         //id와 동일한 데이터를 찾아서 index 반환, 없으면 -1 반환
-    return res.status(404).json("아이디가 존재 하지 않습니다")
-  }
-  if(password === userInfos[Checkid].password){
+  // let Checkid = checkid(id)
+  // if(Checkid === -1){         //id와 동일한 데이터를 찾아서 index 반환, 없으면 -1 반환
+  //   return res.status(404).json("아이디가 존재 하지 않습니다")
+  // }
+  // if(password === userInfos[Checkid].password){
+  //   return res.status(200).json("로그인 성공")
+  // }else{
+  //   return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
+  // }
+  if(accountcheck(id,password, res)==="success"){
     return res.status(200).json("로그인 성공")
-  }else{
-    return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
   }
 }catch(error){
   if(error.name === 'ValidationError'){
@@ -119,15 +137,20 @@ app.patch("/changeName", async (req, res) => {
   try{
     let { id, name, password} = req.body;
     await changeNameschema.validateAsync(req.body)
-    let Checkid = checkid(id)
-    if(Checkid === -1){
-      return res.status(404).json("아이디가 존재 하지 않습니다")
-    }
-    if(password === userInfos[Checkid].password){
+    // let Checkid = checkid(id)
+    // if(Checkid === -1){
+    //   return res.status(404).json("아이디가 존재 하지 않습니다")
+    // }
+    // if(password === userInfos[Checkid].password){
+    //   userInfos[Checkid].name = name      //body에 적은 name으로 변경
+    //   res.send(userInfos[Checkid]);
+    // }else{
+    //   return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
+    // }
+    let Checkid = checkid(id);
+    if(accountcheck(id,password, res)==="success"){
       userInfos[Checkid].name = name      //body에 적은 name으로 변경
       res.send(userInfos[Checkid]);
-    }else{
-      return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
     }
 }catch(error){
   if(error.name === 'ValidationError'){
@@ -144,15 +167,20 @@ app.delete("/withdraw", async (req, res) => {
   try{
     let { id, password} = req.body;
     await signinschema.validateAsync(req.body)
-    let Checkid = checkid(id)
-    if(Checkid === -1){
-      return res.status(404).json("아이디가 존재 하지 않습니다")
-    }
-    if(password === userInfos[Checkid].password){
+    // let Checkid = checkid(id)
+    // if(Checkid === -1){
+    //   return res.status(404).json("아이디가 존재 하지 않습니다")
+    // }
+    // if(password === userInfos[Checkid].password){
+    //   userInfos.splice(Checkid,1)     //index 부터 index 포함 1개 데이터 삭제
+    //   return res.status(200).json("삭제 성공")
+    // }else{
+    //   return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
+    // }
+    let Checkid = checkid(id);
+    if(accountcheck(id,password, res)==="success"){
       userInfos.splice(Checkid,1)     //index 부터 index 포함 1개 데이터 삭제
       return res.status(200).json("삭제 성공")
-    }else{
-      return res.status(409).json("로그인 실패. 비밀번호를 다시 입력하십시오")
     }
 }catch(error){
   if(error.name === 'ValidationError'){
